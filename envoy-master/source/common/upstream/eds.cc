@@ -40,12 +40,13 @@ EdsClusterImpl::EdsClusterImpl(
       eds_config, local_info_, dispatcher, cm, random, info_->statsScope(),
       [this, &eds_config, &cm, &dispatcher,
        &random]() -> Config::Subscription<envoy::api::v2::ClusterLoadAssignment>* {
+         // 从istio获取endpoint信息
         return new SdsSubscription(info_->stats(), eds_config, cm, dispatcher, random);
       },
       "envoy.api.v2.EndpointDiscoveryService.FetchEndpoints",
       "envoy.api.v2.EndpointDiscoveryService.StreamEndpoints");
 }
-
+// 从istio获取endpoint信息
 void EdsClusterImpl::startPreInit() { subscription_->start({cluster_name_}, *this); }
 
 void EdsClusterImpl::onConfigUpdate(const ResourceVector& resources, const std::string&) {

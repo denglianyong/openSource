@@ -157,7 +157,7 @@ HttpConnectionManagerConfig::HttpConnectionManagerConfig(
                                                                          context_.listenerScope())),
       proxy_100_continue_(config.proxy_100_continue()),
       delayed_close_timeout_(PROTOBUF_GET_MS_OR_DEFAULT(config, delayed_close_timeout, 1000)) {
-
+// 从istio 获取路由
   route_config_provider_ = Router::RouteConfigProviderUtil::create(config, context_, stats_prefix_,
                                                                    route_config_provider_manager_);
 

@@ -28,6 +28,7 @@ public:
                           Stats::Scope& scope);
 
   // Upstream::CdsApi
+  //  获取 cluster 信息
   void initialize() override { subscription_->start({}, *this); }
   void setInitializedCb(std::function<void()> callback) override {
     initialize_callback_ = callback;

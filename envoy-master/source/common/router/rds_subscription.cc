@@ -42,6 +42,7 @@ void RdsSubscription::parseResponse(const Http::Message& response) {
   resources[0].set_name(route_config_name_);
   std::pair<std::string, uint64_t> hash =
       Envoy::Config::Utility::computeHashedVersion(response_body);
+  //callbacks_ 在 E:\openSource\envoy-master\source\common\router\rds_impl.cc
   callbacks_->onConfigUpdate(resources, hash.first);
   stats_.version_.set(hash.second);
   stats_.update_success_.inc();

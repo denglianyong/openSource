@@ -32,6 +32,7 @@ RouteConfigProviderPtr RouteConfigProviderUtil::create(
     return route_config_provider_manager.createStaticRouteConfigProvider(config.route_config(),
                                                                          factory_context);
   case envoy::config::filter::network::http_connection_manager::v2::HttpConnectionManager::kRds:
+  //  获取路由
     return route_config_provider_manager.createRdsRouteConfigProvider(config.rds(), factory_context,
                                                                       stat_prefix);
   default:
@@ -68,12 +69,14 @@ RdsRouteConfigSubscription::RdsRouteConfigSubscription(
       last_updated_(factory_context.timeSource().systemTime()) {
   ::Envoy::Config::Utility::checkLocalInfo("rds", factory_context.localInfo());
 
+//  获取路由规则
   subscription_ = Envoy::Config::SubscriptionFactory::subscriptionFromConfigSource<
       envoy::api::v2::RouteConfiguration>(
       rds.config_source(), factory_context.localInfo(), factory_context.dispatcher(),
       factory_context.clusterManager(), factory_context.random(), *scope_,
       [this, &rds,
        &factory_context]() -> Envoy::Config::Subscription<envoy::api::v2::RouteConfiguration>* {
+         //  订阅这里与有建立连接,谁触发？
         return new RdsSubscription(Envoy::Config::Utility::generateStats(*scope_), rds,
                                    factory_context.clusterManager(), factory_context.dispatcher(),
                                    factory_context.random(), factory_context.localInfo(),
@@ -93,7 +96,7 @@ RdsRouteConfigSubscription::~RdsRouteConfigSubscription() {
   // cleaned by the RdsRouteConfigProvider's destructor.
   route_config_provider_manager_.route_config_subscriptions_.erase(manager_identifier_);
 }
-
+//  谁回调的??
 void RdsRouteConfigSubscription::onConfigUpdate(const ResourceVector& resources,
                                                 const std::string& version_info) {
   last_updated_ = time_source_.systemTime();
@@ -123,6 +126,7 @@ void RdsRouteConfigSubscription::onConfigUpdate(const ResourceVector& resources,
     ENVOY_LOG(debug, "rds: loading new configuration: config_name={} hash={}", route_config_name_,
               new_hash);
     for (auto* provider : route_config_providers_) {
+      //  更新路由配置
       provider->onConfigUpdate();
     }
   }

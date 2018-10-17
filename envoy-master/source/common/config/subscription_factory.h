@@ -58,6 +58,7 @@ public:
         result.reset(rest_legacy_constructor());
         break;
       case envoy::api::v2::core::ApiConfigSource::REST:
+      
         result.reset(new HttpSubscriptionImpl<ResourceType>(
             local_info, cm, api_config_source.cluster_names()[0], dispatcher, random,
             Utility::apiConfigSourceRefreshDelay(api_config_source),

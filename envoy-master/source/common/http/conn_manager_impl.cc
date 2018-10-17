@@ -387,6 +387,7 @@ void ConnectionManagerImpl::chargeTracingStats(const Tracing::Reason& tracing_re
 
 ConnectionManagerImpl::ActiveStream::ActiveStream(ConnectionManagerImpl& connection_manager)
     : connection_manager_(connection_manager),
+    // 获取路由
       snapped_route_config_(connection_manager.config_.routeConfigProvider().config()),
       stream_id_(connection_manager.random_generator_.random()),
       request_timer_(new Stats::Timespan(connection_manager_.stats_.named_.downstream_rq_time_,
@@ -975,6 +976,8 @@ void ConnectionManagerImpl::startDrainSequence() {
 }
 
 void ConnectionManagerImpl::ActiveStream::refreshCachedRoute() {
+  //  获取路由信息  实现  见Router::RouteConfigProviderUtil::create
+  //E:\openSource\envoy-master\source\extensions\filters\network\http_connection_manager\config.cc
   Router::RouteConstSharedPtr route = snapped_route_config_->route(*request_headers_, stream_id_);
   request_info_.route_entry_ = route ? route->routeEntry() : nullptr;
   cached_route_ = std::move(route);

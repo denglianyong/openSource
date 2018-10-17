@@ -36,7 +36,7 @@ void SdsApi::initialize(std::function<void()> callback) {
       /* rest_legacy_constructor */ nullptr,
       "envoy.service.discovery.v2.SecretDiscoveryService.FetchSecrets",
       "envoy.service.discovery.v2.SecretDiscoveryService.StreamSecrets");
-
+//  获取凭证  以  为例HttpSubscriptionImpl
   subscription_->start({sds_config_name_}, *this);
 }
 

@@ -43,7 +43,7 @@ void LdsApiImpl::initialize(std::function<void()> callback) {
   // 从istio中获取 listener  
   //E:\envoy-master\source\server\lds_subscription.cc  this.onConfigUpdate作为回调函数
   //E:\envoy-master\source\server\lds_subscription.h  实现在头文件中 init
-  //  发送请求获取LDS
+  //  发送请求获取LDS  监听器
   subscription_->start({}, *this);
 }
 

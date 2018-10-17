@@ -103,6 +103,7 @@ public:
   // Init::Target
   void initialize(std::function<void()> callback) override {
     initialize_callback_ = callback;
+    // 获取路由规则
     subscription_->start({route_config_name_}, *this);
   }
 

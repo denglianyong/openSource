@@ -38,6 +38,7 @@ CdsApiImpl::CdsApiImpl(const envoy::api::v2::core::ConfigSource& cds_config,
           cds_config, local_info, dispatcher, cm, random, *scope_,
           [this, &cds_config, &eds_config, &cm, &dispatcher, &random, &local_info,
            &scope]() -> Config::Subscription<envoy::api::v2::Cluster>* {
+             // 获取 cluster 信息
             return new CdsSubscription(Config::Utility::generateStats(*scope_), cds_config,
                                        eds_config, cm, dispatcher, random, local_info,
                                        scope.statsOptions());
