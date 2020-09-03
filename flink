@@ -1,33 +1,106 @@
-StreamExecutionEnvironment.execute()  生成作业图
+//集群启动，系统初始化
+入口：flink-dist\src\main\flink-bin\bin\start-cluster.sh
+启动JobManager,TaskManager   ； scala 脚本中 handleMessage: Receive 处理各种消息 
+flink-runtime\src\main\scala\org\apache\flink\runtime\jobmanager\JobManager.scala    了解jobmanger的消息类型
+flink-runtime\src\main\scala\org\apache\flink\runtime\taskmanager\TaskManager.scala
+	selectNetworkInterfaceAndRunTaskManager
+		HighAvailabilityServicesUtils.createHighAvailabilityServices  //  ha 一启动立即  pre_start 通知 leader
+		runTaskManager
+		startTaskManagerComponentsAndActor
+		TaskManagerServices.fromConfiguration
+
+
+启动其他组件
+StandaloneSessionClusterEntrypoint.main
+    entrypoint.startCluster()
+	runCluster
+		initializeServices // 初始化服务
+			createRpcService
+			createHaServices
+			new  BlobServer //存储jar包
+			blobServer.start();
+			createHeartbeatServices //心跳
+			createMetricRegistry
+			createSerializableExecutionGraphStore // 存储graph
+			ClusterInformation
+			TransientBlobCache
+		startClusterComponents
+			ha(RM ，Dispatcher),Gateway
+			createRestEndpoint  // Dispatcher 的http Server
+				webMonitorEndpoint.start();
+			createResourceManager
+			resourceManager.start();
+			createDispatcher
+			dispatcher.start();
+			
+
+//应用程序入口
+StreamExecutionEnvironment.execute()  生成stream流图  以StreamContextEnvironment,LocalStreamEnvironment 为例
+      getStreamGraph-->StreamGraphGenerator.generate
+	                    StreamGraphGenerator(env).generateInternal
+						    transform(transformation)  转换成 Operator
+							    transformOneInputTransform 例子
+								transformSource
+								transformSink
+								
+	  ctx.getClient().run   
+	       getJobGraph  生成job图
+		   submitJob    XXXClusterClient --> Cluster.submitJob
+	    
+
 MiniCluster.start()---系统初始化
                StandaloneDispatcher  分发器
 			   BlobServer 文件服务器
 			   startResourceManager  启动资源管理器
 			   startTaskManagers   启动任务管理器，启动netty reactor,nettyProtocol
+				   TaskManagerServices 
+				   createNetworkEnvironment ;network.start();// netty的入口下文单独分析
+				   createMemoryManager //内存管理
+				   IOManagerAsync // 异步io
+				   TaskSlotTable  //  XXXTable
+				   new TaskExecutor // 实现TaskExecutorGateway  TM通信网关  requestSlot申请资源相关；向JM注册等
+				   
+startTaskManagers#netty启动 单独讲：
+	  createNetworkEnvironment //网络通信主角全部亮相
+			new NettyConnectionManager // 网络连接管理器
+				NettyServer
+				NettyClient
+					Bootstrap
+				NettyBufferPool
+				PartitionRequestClientFactory
+	  network.start()	-> NettyConnectionManager.start
+			NettyProtocol 网络协议
+				PartitionRequestQueue ->PartitionRequestServerHandler(server 端处理器)  CreditBasedPartitionRequestClientHandler(client 端处理器)
+	  
+		
+				   
 MiniCluster.executeJobBlocking(jobGraph); 
    submitJob  提交作业
    dispatcherGateway.submitJob
 	   Dispatcher.submitJob  --persistAndRunJob --runJob 
-													createJobManagerRunner 
-// 选主成功后回调													startJobManagerRunner--start()
-EmbeddedLeaderElectionService.start 
-addContender
-updateLeader
-	GrantLeadershipCall.run
+													createJobManagerRunner //  runner中创建JobMaster
+													  startJobManagerRunner--start()
+													    ZooKeeperLeaderElectionService.start
+														leaderLatch.addListener(ZooKeeperLeaderElectionService) 
+														//leaderLatch 回调isLeader()--JobManagerRunner.grantLeadership
+// 选主成功后回调													
 	JobManagerRunner.grantLeadership
 	verifyJobSchedulingStatusAndStartJobManager
 	JobMaster.start ( createSlotPool 向RM申请slot)
 	JobMaster.startJobExecution
-	JobMaster.resetAndScheduleExecutionGraph ->resetAndScheduleExecutionGraph(checkpoint  入口,涉及 2PC commit)
-									--createAndRestoreExecutionGraph (构建执行图，生成CheckpointCoordinator)
-									(执行graph)scheduleExecutionGraph -->executionGraph.scheduleForExecution()
+	   startJobMasterServices
+	        slotPool.start  
+			resourceManagerLeaderRetriever.start
+	   JobMaster.resetAndScheduleExecutionGraph ->resetAndScheduleExecutionGraph(checkpoint  入口,涉及 2PC commit)
+									1.createAndRestoreExecutionGraph (构建执行图ExecutionGraph，生成CheckpointCoordinator)
+									2.(执行graph)scheduleExecutionGraph -->executionGraph.scheduleForExecution()
 	scheduleEager-execution.deploy()(提交部署描述符)
 	taskManagerGateway.submitTask
 	-TaskExecutor.submitTask
 		tdd.loadBigData() 加载jar包
 	    new Task()---task.startTaskThread();
 	       task.run ---	
-		      NetworkEnvironment.registerTask(this) 启动netty reactor反应堆，关联inputGate(读取数据)，ResultPartion(写入数据) 
+		      NetworkEnvironment.registerTask(this) 关联inputGate(读取数据)，ResultPartion(写入数据) 
 		     invokable.invoke();(业务代码执行 StreamTask.java)
 																		
 invokable.invoke()	// StreamTask 为例	
@@ -51,7 +124,7 @@ invokable.invoke()	// StreamTask 为例
 -------------------------------------------------------------------------------------------------			
 operator从inputGate读取数据
 CheckpointBarrierHandler.getNextNonBlocked
-   BarrierTracker.getNextNonBlocked
+   BarrierBuffer.getNextNonBlocked  注：exactly-once是BarrierBuffer
    inputGate.getNextBufferOrEvent()
    requestPartitions()  通过netty发出请求
 		inputChannel.requestSubpartition
@@ -62,17 +135,24 @@ CheckpointBarrierHandler.getNextNonBlocked
 		   decodeMsg
 		   decodeBufferOrEvent
 		   inputChannel.onBuffer(buffer) 
-		   receivedBuffers.add(buffer);
+		   receivedBuffers.add(buffer);// 87行获取buffer
 		   notifyChannelNonEmpty();
 		   inputGate.notifyChannelNonEmpty
 		   inputChannelsWithData.notifyAll(); 见下边的wait
 		   
    inputChannelsWithData.wait(); 等待数据回来
    InputChannel = inputChannelsWithData.remove(); 获取数据
-   result = currentChannel.getNextBuffer()  从receivedBuffers里(见上面的receivedBuffers.add) 获取buffer
+   result = currentChannel.getNextBuffer()  从receivedBuffers里(见上面的 receivedBuffers.add) 获取buffer
+   
+   
+   
+值得一提：BarrierBuffer.getNextNonBlocked 中处理barrier
+
+
+
 -------------------------------------------------------------------------------------------------   
 operator数据写入ResultPartion(入口streamOperator.processElement(record) 处理完数据调用Collector.collect触发写)
-OutputCollector.collect
+OutputCollector.collect  或者 业务代码调用 RecordWriterOutput.collect
 StreamRecordWriter.emit
 sendToTarget
 	 serializer.addRecord 序列化
@@ -81,15 +161,16 @@ sendToTarget
 			ResultPartition.addBufferConsumer
 			PipelinedSubpartition.add  
 			buffers.add  见下边的pollBuffer 取buffer
+		// 下面取出buffer  写数据到netty
 			notifyDataAvailable(); 通知netty发送
 			PipelinedSubpartitionView.notifyDataAvailable
-			CreditBasedSequenceNumberingViewReader.notifyDataAvailable
+			CreditBasedSequenceNumberingViewReader.notifyDataAvailable  // 背压相关
 			PartitionRequestQueue.notifyReaderNonEmpty
 			ctx.pipeline().fireUserEventTriggered(reader))  回调 PartitionRequestQueue 的UserEventTriggered
 			PartitionRequestQueue.enqueueAvailableReader 注册视图
 			PartitionRequestQueue.writeAndFlushNextMessageIfPossible 发送
 				reader.getNextBuffer() ---PipelinedSubpartitionView.getNextBuffer--pollBuffer--buffers.peek() 见上面的buffers.add
-			channel.writeAndFlush(msg) netty发送数据
+			channel.writeAndFlush(msg) netty发送数据// CreditBasedPartitionRequestClientHandler decodeMsg读取上游数据 
 			
      serializer.continueWritingWithNextBufferBuilder(bufferBuilder) 写入业务数据
 	 
@@ -108,13 +189,19 @@ CheckpointCoordinator.startCheckpointScheduler
 		  performCheckpoint
 		  	operatorChain.prepareSnapshotPreBarrier  准备工作
 		    operatorChain.broadcastCheckpointBarrier
-			checkpointState  真正执行
+			checkpointState  真正执行  保存各算子state
 					CheckpointingOperation.executeCheckpointing   存储相关
 					 checkpointStreamOperator  每个算子checkpoint
 					 asyncOperationsThreadPool.submit(asyncCheckpointRunnable) 给jobManger 发送 CompletedCheckPoint 消息,  jm收到sink的消息后，执行 二阶段提交的commit
 					  reportCompletedSnapshotStates
 					  TaskStateManagerImpl.reportTaskStateSnapshots
-					  RpcCheckpointResponder.acknowledgeCheckpoint
+					  ### RpcCheckpointResponder.acknowledgeCheckpoint   ###
+		 持久化state到backend 在 AbstractStreamOperator.snapshotState
+		 operatorStateBackend.snapshot  以 DefaultOperatorStateBackend 为例
+		 performOperation
+ 
+1. flink-runtime\src\main\scala\org\apache\flink\runtime\jobmanager\JobManager.scala
+2.JobMater.acknowledgeCheckpoint响应	   ### RpcCheckpointResponder.acknowledgeCheckpoint   ###
 提交阶段
 CheckpointCoordinator.receiveAcknowledgeMessage
 completePendingCheckpoint
@@ -127,5 +214,17 @@ completePendingCheckpoint
 	StreamTask.notifyCheckpointComplete
 	StreamOperator.notifyCheckpointComplete
 	keyedStateBackend.notifyCheckpointComplete(存储相关)
+-------------------------------------------------------------------------
+分布式消息系统 jm  jt
 
+StandaloneMiniCluster 启动  JobManager.startJobManagerActors
+
+内存管理：MemoryManager   MemeryPool 与BufferPool 
+
+
+与框架衔接点targetPartition.getBufferProvider().requestBufferBuilderBlocking()
+NetworkBufferPool，HeapMemorySegment， LocalBufferPool , StreamRecord
+
+
+   
 
