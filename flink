@@ -1,3 +1,45 @@
+
+
+环境搭建
+https://blog.csdn.net/nico0124/article/details/108720238
+
+
+架构分析
+https://www.cnblogs.com/nightbreeze/p/10942536.html
+
+mvn clean package -DskipTests -Dfast 
+
+flink-conf.yaml
+taskmanager.cpu.cores: 2
+taskmanager.memory.task.heap.size: 512m
+taskmanager.memory.managed.size: 512m
+taskmanager.memory.network.min: 64m
+taskmanager.memory.network.max: 64m
+
+配置log4j
+
+# 控制台(console)
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+log4j.appender.console.Threshold=DEBUG
+log4j.appender.console.ImmediateFlush=true
+log4j.appender.console.Target=System.err
+log4j.appender.console.layout=org.apache.log4j.PatternLayout
+log4j.appender.console.layout.ConversionPattern=[%-5p] --> [%t] %l: %m %x %n
+
+
+
+-Xms1024m -Xmx1024m -cp lib/*  -Dlog.file=log/flink-standalonesession.log -Dlog4j.configuration=file:conf/log4j.properties -Dlogback.configurationFile=file:conf/logback.xml
+
+ --configDir   conf --executionMode cluster
+
+
+-Xms1024m -Xmx1024m -cp lib/*  -Dlog.file=log/flink-taskmanager.log -Dlog4j.configuration=file:conf/log4j.properties -Dlogback.configurationFile=file:conf/logback.xml
+--configDir  conf
+
+
+
+
+
 //集群启动，系统初始化
 入口：flink-dist\src\main\flink-bin\bin\start-cluster.sh
 启动JobManager,TaskManager   ； scala 脚本中 handleMessage: Receive 处理各种消息 
