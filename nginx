@@ -10,6 +10,9 @@ daemon off 前台启动
 
 eclipse导入失败，找不到目标all：
 解决办法：将根目录下的Makefile 的build目标修改为all
+
+root 启动  需要配置user=root
+普通用户启动 需要修改端口8080
  
  gdb调试
  home目录下  新建.gdbinit
