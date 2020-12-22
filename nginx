@@ -22,6 +22,13 @@ root 启动  需要配置user=root
 openssl，pcre  等库 wget到/usr/local/src
 
 
+安装增强工具
+报错，先eject 光盘，安装增强功能
+
+centos root 密码   deng=6759929
+ubuntu  orion 密码  deng=123456
+
+
 eclipse for C/C++ 官网下载
 https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/oxygen/3a/eclipse-cpp-oxygen-3a-linux-gtk-x86_64.tar.gz&mirror_id=1290
 
