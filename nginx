@@ -12,3 +12,9 @@ eclipse导入失败，找不到目标all：
 解决办法：将根目录下的Makefile 的build目标修改为all
 
 
+
+
+eclipse for C/C++ 官网下载
+https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/oxygen/3a/eclipse-cpp-oxygen-3a-linux-gtk-x86_64.tar.gz&mirror_id=1290
+
+
