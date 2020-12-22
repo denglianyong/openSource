@@ -1,5 +1,5 @@
 eclipse  启动参数
--c  nginx配置文件路径
+-c  nginx配置文件路径 ~/conf/nginx.conf
 
 debug 修改cc参数
 auto/cc/conf  :cflag 加-g
@@ -10,11 +10,18 @@ daemon off 前台启动
 
 eclipse导入失败，找不到目标all：
 解决办法：将根目录下的Makefile 的build目标修改为all
+ 
+ gdb调试
+ home目录下  新建.gdbinit
+ set follow-fork-mode child 
+ 追踪子进程
 
-
+openssl，pcre  等库 wget到/usr/local/src
 
 
 eclipse for C/C++ 官网下载
 https://www.eclipse.org/downloads/download.php?file=/technology/epp/downloads/release/oxygen/3a/eclipse-cpp-oxygen-3a-linux-gtk-x86_64.tar.gz&mirror_id=1290
 
+aliyun下载 ubuntu
+http://mirrors.aliyun.com/ubuntu-releases/
 
