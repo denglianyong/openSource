@@ -1,0 +1,10 @@
+eclipse  启动参数
+-c  nginx配置文件路径
+
+debug 修改cc参数
+auto/cc/conf  :cflag 加-g
+auto/cc/gcc -O0  防止编译器优化代码，debug乱跳
+
+daemon off 前台启动
+新建logs目录
+
