@@ -6,5 +6,9 @@ auto/cc/conf  :cflag 加-g
 auto/cc/gcc -O0  防止编译器优化代码，debug乱跳
 
 daemon off 前台启动
-新建logs目录
+新建logs目录，防止启动失败
+
+eclipse导入失败，找不到目标all：
+解决办法：将根目录下的Makefile 的build目标修改为all
+
 
