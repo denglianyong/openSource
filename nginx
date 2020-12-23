@@ -1,12 +1,15 @@
 eclipse  启动参数
--c  nginx配置文件路径 ~/conf/nginx.conf
+-c  nginx配置文件路径 /home/orion/workspace/nginx/conf/nginx.conf
 
 debug 修改cc参数
 auto/cc/conf  :cflag 加-g
 auto/cc/gcc -O0  防止编译器优化代码，debug乱跳
 
-daemon off 前台启动
+daemon off; 前台启动
 新建logs目录，防止启动失败
+
+./configure --prefix=/home/orion/workspace/nginx
+
 
 eclipse导入失败，找不到目标all：
 解决办法：将根目录下的Makefile 的build目标修改为all
