@@ -27,12 +27,12 @@ log4j.appender.console.layout=org.apache.log4j.PatternLayout
 log4j.appender.console.layout.ConversionPattern=[%-5p] --> [%t] %l: %m %x %n
 
 
-
+org.apache.flink.runtime.entrypoint.StandaloneSessionClusterEntrypoint
 -Xms1024m -Xmx1024m -cp lib/*  -Dlog.file=log/flink-standalonesession.log -Dlog4j.configuration=file:conf/log4j.properties -Dlogback.configurationFile=file:conf/logback.xml
 
  --configDir   conf --executionMode cluster
 
-
+org.apache.flink.runtime.taskexecutor.TaskManagerRunner
 -Xms1024m -Xmx1024m -cp lib/*  -Dlog.file=log/flink-taskmanager.log -Dlog4j.configuration=file:conf/log4j.properties -Dlogback.configurationFile=file:conf/logback.xml
 --configDir  conf
 
